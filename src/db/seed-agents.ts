@@ -13,11 +13,20 @@ export const agentSeeds: AgentCard[] = [
     ],
     homepage: 'https://agents.example.com/atlas',
     documentation: 'https://docs.example.com/atlas',
-    security: {
-      authentication: 'api-key',
-      encryption: 'required',
-      audience: 'atlas-clients'
-    },
+    securitySchemes: [
+      {
+        name: 'atlas-api-key',
+        type: 'apiKey',
+        in: 'header',
+        keyName: 'x-api-key',
+        description: 'Atlas API key issued per downstream client.'
+      }
+    ],
+    security: [
+      {
+        scheme: 'atlas-api-key'
+      }
+    ],
     preferredTransport: 'https',
     transportUrl: 'https://agents.example.com/atlas/api',
     additionalTransports: ['websocket'],
@@ -125,11 +134,19 @@ export const agentSeeds: AgentCard[] = [
     maintainers: [
       { name: 'Priya Kapoor', email: 'priya@workflows.example' }
     ],
-    security: {
-      authentication: 'oauth2',
-      encryption: 'required',
-      audience: 'workspace-automation'
-    },
+    securitySchemes: [
+      {
+        name: 'workflow-oauth',
+        type: 'oauth2',
+        description: 'OAuth2 client credentials for workflow automation.'
+      }
+    ],
+    security: [
+      {
+        scheme: 'workflow-oauth',
+        scopes: ['approvals:route']
+      }
+    ],
     preferredTransport: 'grpc',
     transportUrl: 'grpc://agents.example.com/workflow',
     metadata: {
@@ -202,11 +219,18 @@ export const agentSeeds: AgentCard[] = [
     maintainers: [
       { name: 'Marco Stein', email: 'marco@summaries.example' }
     ],
-    security: {
-      authentication: 'mutual-tls',
-      encryption: 'required',
-      audience: 'summaries-clients'
-    },
+    securitySchemes: [
+      {
+        name: 'insight-mtls',
+        type: 'mtls',
+        description: 'Mutual TLS certificates provisioned for insight clients.'
+      }
+    ],
+    security: [
+      {
+        scheme: 'insight-mtls'
+      }
+    ],
     preferredTransport: 'https',
     transportUrl: 'https://agents.example.com/insight',
     documentation: 'https://docs.example.com/insight-summarizer',
