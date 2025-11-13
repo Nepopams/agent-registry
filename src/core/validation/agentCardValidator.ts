@@ -20,7 +20,8 @@ const validateAgentCardSchema = ajv.compile<AgentCard>(agentCardSchema);
 const REQUIRED_TOP_LEVEL_FIELDS: Array<keyof AgentCard> = [
   'protocolVersion',
   'name',
-  'version'
+  'version',
+  'transportUrl'
 ];
 
 export type AjvError = {

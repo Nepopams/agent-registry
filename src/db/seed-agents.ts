@@ -19,12 +19,14 @@ export const agentSeeds: AgentCard[] = [
       audience: 'atlas-clients'
     },
     preferredTransport: 'https',
+    transportUrl: 'https://agents.example.com/atlas/api',
     additionalTransports: ['websocket'],
     additionalInterfaces: [
       {
         name: 'status-endpoint',
-        endpoint: 'https://agents.example.com/atlas/status',
+        url: 'https://agents.example.com/atlas/status',
         protocol: 'rest',
+        transport: 'https',
         description: 'Operational status feed for Atlas'
       }
     ],
@@ -129,6 +131,7 @@ export const agentSeeds: AgentCard[] = [
       audience: 'workspace-automation'
     },
     preferredTransport: 'grpc',
+    transportUrl: 'grpc://agents.example.com/workflow',
     metadata: {
       environment: 'production'
     },
@@ -205,6 +208,7 @@ export const agentSeeds: AgentCard[] = [
       audience: 'summaries-clients'
     },
     preferredTransport: 'https',
+    transportUrl: 'https://agents.example.com/insight',
     documentation: 'https://docs.example.com/insight-summarizer',
     createdAt: '2024-06-11T12:00:00.000Z',
     updatedAt: '2025-02-14T12:00:00.000Z',

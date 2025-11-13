@@ -10,7 +10,8 @@
     "description",
     "skills",
     "security",
-    "preferredTransport"
+    "preferredTransport",
+    "transportUrl"
   ],
   "additionalProperties": false,
   "properties": {
@@ -87,13 +88,17 @@
     },
     "preferredTransport": {
       "type": "string",
-      "enum": ["https", "websocket", "nats", "grpc"]
+      "enum": ["http", "https", "websocket", "nats", "grpc", "mqtt", "jsonrpc"]
+    },
+    "transportUrl": {
+      "type": "string",
+      "format": "uri"
     },
     "additionalTransports": {
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["https", "websocket", "nats", "grpc", "mqtt"]
+        "enum": ["http", "https", "websocket", "nats", "grpc", "mqtt", "jsonrpc"]
       },
       "uniqueItems": true
     },
@@ -101,20 +106,24 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "endpoint", "protocol"],
+        "required": ["name", "url", "protocol", "transport"],
         "additionalProperties": false,
         "properties": {
           "name": {
             "type": "string",
             "minLength": 3
           },
-          "endpoint": {
+          "url": {
             "type": "string",
             "format": "uri"
           },
           "protocol": {
             "type": "string",
             "enum": ["rest", "graphql", "grpc", "cli"]
+          },
+          "transport": {
+            "type": "string",
+            "enum": ["http", "https", "websocket", "nats", "grpc", "mqtt", "jsonrpc"]
           },
           "description": {
             "type": "string",
