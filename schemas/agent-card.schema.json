@@ -1,0 +1,208 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a2a.schemas/agent-card.schema.json",
+  "title": "Agent Card",
+  "type": "object",
+  "required": [
+    "protocolVersion",
+    "name",
+    "version",
+    "description",
+    "skills",
+    "security",
+    "preferredTransport",
+    "transportUrl"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "protocolVersion": {
+      "type": "string",
+      "pattern": "^a2a/[0-9]+\\.[0-9]+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+)?(?:\\+[0-9A-Za-z-]+)?$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2
+      },
+      "uniqueItems": true,
+      "maxItems": 20
+    },
+    "maintainers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "email"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      }
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "documentation": {
+      "type": "string",
+      "format": "uri"
+    },
+    "securitySchemes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "type": {
+            "type": "string",
+            "enum": ["apiKey", "http", "oauth2", "oidc", "mtls"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5
+          },
+          "in": {
+            "type": "string",
+            "enum": ["header", "query", "cookie"]
+          },
+          "keyName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scheme": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bearerFormat": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "uniqueItems": true
+    },
+    "security": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scheme"],
+        "additionalProperties": false,
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "preferredTransport": {
+      "type": "string",
+      "enum": ["http", "https", "websocket", "nats", "grpc", "mqtt", "jsonrpc"]
+    },
+    "transportUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "additionalTransports": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["http", "https", "websocket", "nats", "grpc", "mqtt", "jsonrpc"]
+      },
+      "uniqueItems": true
+    },
+    "additionalInterfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "url", "protocol", "transport"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": ["rest", "graphql", "grpc", "cli"]
+          },
+          "transport": {
+            "type": "string",
+            "enum": ["http", "https", "websocket", "nats", "grpc", "mqtt", "jsonrpc"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5
+          }
+        }
+      }
+    },
+    "preferredLocales": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]{2}-[A-Z]{2}$"
+      },
+      "uniqueItems": true,
+      "maxItems": 10
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean"]
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "./agent-skill.schema.json"
+      }
+    }
+  }
+}

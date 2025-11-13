@@ -2,23 +2,20 @@
   "name": "agent-registry",
   "version": "0.1.0",
   "type": "module",
-  "private": true,
+  "packageManager": "pnpm@9.12.3",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
-  },
-  "devDependencies": {
-    "@types/node": "^22.8.0",
-    "mongodb-memory-server": "^10.1.4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.6.3",
-    "vitest": "^2.0.5",
-    "@vitest/coverage-v8": "^2.0.5"
+    "test": "vitest run"
   },
   "dependencies": {
-    "mongodb": "^6.8.0"
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.0",
+    "fastify": "^4.28.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "json-schema-to-ts": "^3.1.1",
+    "supertest": "^7.1.4",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.3"
   }
 }
