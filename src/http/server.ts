@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import agentSeeds from '../db/seed-agents.js';
@@ -79,7 +80,34 @@ const paginate = (items: AgentCard[], limit?: number, offset?: number) => {
   return items.slice(normalizedOffset, normalizedOffset + normalizedLimit);
 };
 
-const buildAgentsRoute = (app: FastifyInstance) => {
+type StoredAgent = {
+  id: string;
+  fingerprint: string;
+  card: AgentCard;
+};
+
+const sortObjectKeys = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(sortObjectKeys);
+  }
+  if (value && typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = sortObjectKeys((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {});
+  }
+  return value;
+};
+
+const fingerprintOf = (card: AgentCard) =>
+  JSON.stringify(sortObjectKeys(card));
+
+const buildAgentsRoute = (
+  app: FastifyInstance,
+  store: Map<string, StoredAgent>
+) => {
   app.post<{
     Body: AgentCard;
   }>('/agents', {
@@ -129,13 +157,47 @@ const buildAgentsRoute = (app: FastifyInstance) => {
       });
     }
 
+    const key = `${request.body.name}@${request.body.version}`;
+    const fingerprint = fingerprintOf(request.body);
+
+    const existing = store.get(key);
+    if (existing) {
+      if (existing.fingerprint !== fingerprint) {
+        return reply.status(409).send({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'AgentCard for this name and version already exists with different content.'
+        });
+      }
+      return reply.status(200).send({
+        status: 'accepted',
+        id: existing.id
+      });
+    }
+
+    const entry: StoredAgent = {
+      id: randomUUID(),
+      fingerprint,
+      card: structuredClone(request.body)
+    };
+    store.set(key, entry);
+
     return reply.status(200).send({
-      status: 'accepted'
+      status: 'accepted',
+      id: entry.id
     });
   });
 };
 
-const buildReadRoutes = (app: FastifyInstance) => {
+const buildReadRoutes = (
+  app: FastifyInstance,
+  store: Map<string, StoredAgent>
+) => {
+  const currentAgents = () => [
+    ...Array.from(store.values()).map((entry) => entry.card),
+    ...agentSeeds
+  ];
+
   app.get('/agents', {
     schema: {
       summary: 'List published agents',
@@ -145,7 +207,7 @@ const buildReadRoutes = (app: FastifyInstance) => {
     }
   }, async (request) => {
     const { limit, offset } = request.query as { limit?: number; offset?: number };
-    return { items: paginate(agentSeeds, limit, offset) };
+    return { items: paginate(currentAgents(), limit, offset) };
   });
 
   app.get('/agents/:name', {
@@ -161,7 +223,7 @@ const buildReadRoutes = (app: FastifyInstance) => {
     }
   }, async (request, reply) => {
     const { name } = request.params as { name: string };
-    const card = agentSeeds.find((seed) => seed.name === name);
+    const card = currentAgents().find((seed) => seed.name === name);
     if (!card) {
       return reply.status(404).send({
         statusCode: 404,
@@ -188,7 +250,7 @@ const buildReadRoutes = (app: FastifyInstance) => {
     }
   }, async (request, reply) => {
     const { name, version } = request.params as { name: string; version: string };
-    const card = agentSeeds.find((seed) => seed.name === name && seed.version === version);
+    const card = currentAgents().find((seed) => seed.name === name && seed.version === version);
     if (!card) {
       return reply.status(404).send({
         statusCode: 404,
@@ -229,7 +291,7 @@ const buildReadRoutes = (app: FastifyInstance) => {
       });
     }
 
-    const matches = agentSeeds.filter(
+    const matches = currentAgents().filter(
       (card) => Array.isArray(card.skills) && card.skills.some((s) => s.id === skill)
     );
 
@@ -241,6 +303,7 @@ export const buildServer = (): FastifyInstance => {
   const app = Fastify({
     logger: false
   });
+  const store = new Map<string, StoredAgent>();
 
   app.register(swagger, {
     openapi: {
@@ -269,8 +332,8 @@ export const buildServer = (): FastifyInstance => {
   app.addSchema(skillRouteSchema);
   app.get('/openapi.json', { schema: { hide: true } }, async () => app.swagger());
 
-  buildAgentsRoute(app);
-  buildReadRoutes(app);
+  buildAgentsRoute(app, store);
+  buildReadRoutes(app, store);
 
   return app;
 };
