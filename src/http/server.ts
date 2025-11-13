@@ -7,6 +7,8 @@ import { assertTransportConsistency } from '../core/validation/policies.js';
 import type { AgentCard } from '../types/agent-card.js';
 import { agentCardSchema, agentSkillSchema } from '../types/agent-card.js';
 
+const exampleAgents = agentSeeds.slice(0, 3);
+
 const PAGINATION_SCHEMA = {
   type: 'object',
   properties: {
@@ -39,6 +41,9 @@ const listResponseSchema = {
       type: 'array',
       items: agentCardRouteSchema
     }
+  },
+  example: {
+    items: exampleAgents
   }
 } as const;
 
@@ -46,6 +51,9 @@ const singleResponseSchema = {
   type: 'object',
   properties: {
     card: agentCardRouteSchema
+  },
+  example: {
+    card: exampleAgents[0]
   }
 } as const;
 
@@ -78,12 +86,21 @@ const buildAgentsRoute = (app: FastifyInstance) => {
     schema: {
       summary: 'Publish an AgentCard',
       tags: ['Agents'],
-      body: agentCardRouteSchema,
+      body: {
+        ...agentCardRouteSchema,
+        examples: exampleAgents.map((card) => ({
+          summary: card.name,
+          value: card
+        }))
+      },
       response: {
         200: {
           type: 'object',
           properties: {
             status: { type: 'string' }
+          },
+          example: {
+            status: 'accepted'
           }
         }
       }
