@@ -20,7 +20,10 @@ describe('POST /agents', () => {
     const response = await request(app.server).post('/agents').send(structuredClone(seedAgent));
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'accepted' });
+    expect(response.body.status).toBe('accepted');
+    expect(response.body.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
   });
 
   it('returns 400 when required fields are missing', async () => {
@@ -63,7 +66,30 @@ describe('POST /agents', () => {
     const response = await request(app.server).post('/agents').send(payload);
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'accepted' });
+    expect(response.body.status).toBe('accepted');
+    expect(response.body.id).toBeDefined();
+  });
+
+  it('is idempotent for identical cards', async () => {
+    const cardPayload = structuredClone(seedAgent);
+    const first = await request(app.server).post('/agents').send(cardPayload);
+    const second = await request(app.server).post('/agents').send(cardPayload);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(second.body.id).toBe(first.body.id);
+  });
+
+  it('returns 409 when the same version has different content', async () => {
+    const base = structuredClone(seedAgent);
+    const mutated = structuredClone(seedAgent);
+    mutated.description = `${mutated.description} (modified)`;
+
+    await request(app.server).post('/agents').send(base).expect(200);
+    const conflict = await request(app.server).post('/agents').send(mutated);
+
+    expect(conflict.status).toBe(409);
+    expect(conflict.body.message).toContain('already exists with different content');
   });
 
   const mismatchedTransports = [
