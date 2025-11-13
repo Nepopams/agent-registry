@@ -106,7 +106,8 @@ const additionalValidCards: AgentCard[] = [
       encryption: 'required',
       audience: 'analytics-clients'
     },
-    preferredTransport: 'https'
+    preferredTransport: 'https',
+    transportUrl: 'https://analytics.example.com/api'
   },
   {
     protocolVersion: 'a2a/1.0',
@@ -120,6 +121,7 @@ const additionalValidCards: AgentCard[] = [
       audience: 'polyglot-consumers'
     },
     preferredTransport: 'websocket',
+    transportUrl: 'wss://polyglot.example/ws',
     additionalTransports: ['https']
   }
 ];
@@ -142,7 +144,8 @@ const invalidCases: InvalidCase[] = [
         authentication: 'api-key',
         encryption: 'required'
       },
-      preferredTransport: 'https'
+      preferredTransport: 'https',
+      transportUrl: 'https://broken.example/api'
     } as AgentCard,
     expectedPath: ''
   },
@@ -158,7 +161,8 @@ const invalidCases: InvalidCase[] = [
         authentication: 'api-key',
         encryption: 'required'
       },
-      preferredTransport: 'https'
+      preferredTransport: 'https',
+      transportUrl: 'https://bad-version.example/api'
     } as AgentCard,
     expectedPath: '/version'
   },
@@ -179,7 +183,8 @@ const invalidCases: InvalidCase[] = [
         authentication: 'api-key',
         encryption: 'required'
       },
-      preferredTransport: 'https'
+      preferredTransport: 'https',
+      transportUrl: 'https://missing-examples.example/api'
     } as AgentCard,
     expectedPath: '/skills/0/examples'
   },
@@ -195,7 +200,8 @@ const invalidCases: InvalidCase[] = [
         authentication: 'api-key',
         encryption: 'required'
       },
-      preferredTransport: 'smtp'
+      preferredTransport: 'smtp',
+      transportUrl: 'smtp://unsupported.example'
     } as AgentCard,
     expectedPath: '/preferredTransport'
   },
@@ -223,7 +229,8 @@ const invalidCases: InvalidCase[] = [
         authentication: 'api-key',
         encryption: 'required'
       },
-      preferredTransport: 'https'
+      preferredTransport: 'https',
+      transportUrl: 'https://bad-example.example/api'
     } as AgentCard,
     expectedPath: '/skills/0/examples/0/input'
   }
