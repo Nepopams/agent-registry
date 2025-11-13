@@ -1,6 +1,4 @@
-﻿node_modules
-coverage
-.env
-.pnpm-store
-.DS_Store
-dist
+﻿node_modules/
+dist/
+coverage/
+.vscode/
