@@ -37,6 +37,35 @@ describe('POST /agents', () => {
     });
   });
 
+  it('returns 400 when a security scheme is not defined', async () => {
+    const payload = structuredClone(seedAgent);
+    payload.security = [
+      {
+        scheme: 'ghost-scheme'
+      }
+    ];
+
+    const response = await request(app.server).post('/agents').send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('/security/0/scheme not defined.');
+    expect(response.body.details[0]).toEqual({
+      path: '/security/0/scheme',
+      message: '/security/0/scheme not defined.'
+    });
+  });
+
+  it('allows publishing when security array is empty', async () => {
+    const payload = structuredClone(seedAgent);
+    payload.security = [];
+    payload.securitySchemes = [];
+
+    const response = await request(app.server).post('/agents').send(payload);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'accepted' });
+  });
+
   const mismatchedTransports = [
     {
       name: 'http',

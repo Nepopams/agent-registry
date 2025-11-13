@@ -103,6 +103,28 @@ const preflightRequiredFields = (card: Record<string, unknown>): AjvError[] => {
   return errors;
 };
 
+const validateSecuritySchemeReferences = (card: AgentCard): AjvError[] => {
+  if (!Array.isArray(card.security) || card.security.length === 0) {
+    return [];
+  }
+
+  const definedSchemes = new Set(
+    (card.securitySchemes ?? []).map((scheme) => scheme.name)
+  );
+  const errors: AjvError[] = [];
+
+  card.security.forEach((entry, index) => {
+    if (!definedSchemes.has(entry.scheme)) {
+      errors.push({
+        path: `/security/${index}/scheme`,
+        message: `/security/${index}/scheme not defined.`
+      });
+    }
+  });
+
+  return errors;
+};
+
 export const validateAgentCard = (card: unknown): AgentCardValidationResult => {
   if (!card || typeof card !== 'object') {
     return {
@@ -121,6 +143,14 @@ export const validateAgentCard = (card: unknown): AgentCardValidationResult => {
   const valid = validateAgentCardSchema(card);
 
   if (valid) {
+    const securityErrors = validateSecuritySchemeReferences(card as AgentCard);
+    if (securityErrors.length > 0) {
+      return {
+        ok: false,
+        errors: securityErrors
+      };
+    }
+
     return { ok: true };
   }
 

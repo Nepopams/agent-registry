@@ -101,11 +101,20 @@ const additionalValidCards: AgentCard[] = [
     version: '1.0.0',
     description: 'Produces behavioral analytics by aggregating instrumentation streams.',
     skills: [analyticsSkill],
-    security: {
-      authentication: 'api-key',
-      encryption: 'required',
-      audience: 'analytics-clients'
-    },
+    securitySchemes: [
+      {
+        name: 'analytics-api-key',
+        type: 'apiKey',
+        in: 'header',
+        keyName: 'x-api-key',
+        description: 'API key securing analytics agent.'
+      }
+    ],
+    security: [
+      {
+        scheme: 'analytics-api-key'
+      }
+    ],
     preferredTransport: 'https',
     transportUrl: 'https://analytics.example.com/api'
   },
@@ -115,11 +124,19 @@ const additionalValidCards: AgentCard[] = [
     version: '3.2.1',
     description: 'Offers near real-time translations across twenty locales for short texts.',
     skills: [translationSkill],
-    security: {
-      authentication: 'oauth2',
-      encryption: 'required',
-      audience: 'polyglot-consumers'
-    },
+    securitySchemes: [
+      {
+        name: 'polyglot-oauth',
+        type: 'oauth2',
+        description: 'OAuth2 scopes for translator access.'
+      }
+    ],
+    security: [
+      {
+        scheme: 'polyglot-oauth',
+        scopes: ['translations:write']
+      }
+    ],
     preferredTransport: 'websocket',
     transportUrl: 'wss://polyglot.example/ws',
     additionalTransports: ['https']
@@ -140,10 +157,8 @@ const invalidCases: InvalidCase[] = [
       name: 'Broken Card',
       version: '1.0.0',
       skills: [translationSkill],
-      security: {
-        authentication: 'api-key',
-        encryption: 'required'
-      },
+      securitySchemes: [],
+      security: [],
       preferredTransport: 'https',
       transportUrl: 'https://broken.example/api'
     } as AgentCard,
@@ -157,10 +172,8 @@ const invalidCases: InvalidCase[] = [
       version: '1.0',
       description: 'Version string does not follow semver spec.',
       skills: [translationSkill],
-      security: {
-        authentication: 'api-key',
-        encryption: 'required'
-      },
+      securitySchemes: [],
+      security: [],
       preferredTransport: 'https',
       transportUrl: 'https://bad-version.example/api'
     } as AgentCard,
@@ -179,10 +192,8 @@ const invalidCases: InvalidCase[] = [
           examples: []
         }
       ],
-      security: {
-        authentication: 'api-key',
-        encryption: 'required'
-      },
+      securitySchemes: [],
+      security: [],
       preferredTransport: 'https',
       transportUrl: 'https://missing-examples.example/api'
     } as AgentCard,
@@ -196,10 +207,8 @@ const invalidCases: InvalidCase[] = [
       version: '1.0.0',
       description: 'Uses a transport that is not part of the contract.',
       skills: [translationSkill],
-      security: {
-        authentication: 'api-key',
-        encryption: 'required'
-      },
+      securitySchemes: [],
+      security: [],
       preferredTransport: 'smtp',
       transportUrl: 'smtp://unsupported.example'
     } as AgentCard,
@@ -225,10 +234,8 @@ const invalidCases: InvalidCase[] = [
           ]
         }
       ],
-      security: {
-        authentication: 'api-key',
-        encryption: 'required'
-      },
+      securitySchemes: [],
+      security: [],
       preferredTransport: 'https',
       transportUrl: 'https://bad-example.example/api'
     } as AgentCard,

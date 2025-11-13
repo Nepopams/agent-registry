@@ -67,22 +67,64 @@
       "type": "string",
       "format": "uri"
     },
+    "securitySchemes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3
+          },
+          "type": {
+            "type": "string",
+            "enum": ["apiKey", "http", "oauth2", "oidc", "mtls"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5
+          },
+          "in": {
+            "type": "string",
+            "enum": ["header", "query", "cookie"]
+          },
+          "keyName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scheme": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bearerFormat": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "uniqueItems": true
+    },
     "security": {
-      "type": "object",
-      "required": ["authentication", "encryption"],
-      "additionalProperties": false,
-      "properties": {
-        "authentication": {
-          "type": "string",
-          "enum": ["none", "api-key", "oauth2", "mutual-tls"]
-        },
-        "encryption": {
-          "type": "string",
-          "enum": ["required", "optional"]
-        },
-        "audience": {
-          "type": "string",
-          "minLength": 3
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scheme"],
+        "additionalProperties": false,
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
         }
       }
     },
