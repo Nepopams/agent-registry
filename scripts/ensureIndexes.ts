@@ -6,4 +6,8 @@ const run = async () => {
   await ensureIndexes(db);
   await closeDb();
 };
-run().catch(e => { console.error(e); process.exit(1); });
+
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

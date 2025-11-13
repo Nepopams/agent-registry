@@ -1,12 +1,18 @@
-﻿import { Db, Collection, ObjectId } from "mongodb";
+﻿import { Db, Collection, ObjectId, Filter, Document } from "mongodb";
 import crypto from "node:crypto";
 
 export type AgentStatus = "draft" | "published" | "deprecated";
+
+export interface AgentSkill {
+  id: string;
+  [k: string]: unknown;
+}
 
 export interface AgentCard {
   protocolVersion: string;
   name: string;
   version: string;
+  skills?: AgentSkill[];
   [k: string]: unknown;
 }
 
@@ -19,28 +25,52 @@ export interface StoredAgent {
   fingerprint: string;
 }
 
+export interface ListParams {
+  limit?: number;
+  offset?: number;
+  owner?: string;
+  status?: AgentStatus;
+}
+
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+const COLLECTION_NAME = "agents";
+
+export function collection(db: Db): Collection<StoredAgent> {
+  return db.collection<StoredAgent>(COLLECTION_NAME);
+}
+
+function normalizeLimit(limit?: number) {
+  if (!limit && limit !== 0) return DEFAULT_LIMIT;
+  return Math.min(Math.max(limit, 1), MAX_LIMIT);
+}
+
+function normalizeOffset(offset?: number) {
+  if (!offset) return 0;
+  return Math.max(offset, 0);
+}
+
 function sortObjectKeys<T>(obj: T): T {
-  if (Array.isArray(obj)) return obj.map(sortObjectKeys) as any;
+  if (Array.isArray(obj)) return obj.map(sortObjectKeys) as unknown as T;
   if (obj && typeof obj === "object") {
     const sorted: Record<string, unknown> = {};
-    Object.keys(obj as any).sort().forEach(k => {
-      // @ts-ignore
-      sorted[k] = sortObjectKeys((obj as any)[k]);
-    });
-    return sorted as any;
+    Object.keys(obj as Record<string, unknown>)
+      .sort()
+      .forEach((key) => {
+        sorted[key] = sortObjectKeys((obj as Record<string, unknown>)[key]);
+      });
+    return sorted as unknown as T;
   }
   return obj;
 }
 
-function stableStringify(v: unknown) {
-  return JSON.stringify(sortObjectKeys(v));
-}
-function sha256(s: string) {
-  return crypto.createHash("sha256").update(s).digest("hex");
+function stableStringify(value: unknown) {
+  return JSON.stringify(sortObjectKeys(value));
 }
 
-export function collection(db: Db): Collection<StoredAgent> {
-  return db.collection<StoredAgent>("agents");
+function fingerprintOf(card: AgentCard) {
+  const payload = stableStringify(card);
+  return crypto.createHash("sha256").update(payload).digest("hex");
 }
 
 export async function ensureIndexes(db: Db) {
@@ -49,11 +79,12 @@ export async function ensureIndexes(db: Db) {
     { "card.name": 1, "card.version": 1 },
     { unique: true, name: "uniq_name_version" }
   );
+  await col.createIndex({ "card.skills.id": 1 }, { name: "idx_skill_id" });
 }
 
 export async function insertIfNew(db: Db, card: AgentCard, owner: string): Promise<StoredAgent> {
   const col = collection(db);
-  const fp = sha256(stableStringify(card));
+  const fingerprint = fingerprintOf(card);
   const now = new Date();
   try {
     const res = await col.insertOne({
@@ -61,30 +92,87 @@ export async function insertIfNew(db: Db, card: AgentCard, owner: string): Promi
       owner,
       publishedAt: now,
       status: "published",
-      fingerprint: fp
+      fingerprint
     });
     const inserted = await col.findOne({ _id: res.insertedId });
     if (!inserted) throw new Error("inserted document not found");
     return inserted;
-  } catch (e: any) {
-    if (e?.code === 11000) {
+  } catch (error: any) {
+    if (error?.code === 11000) {
       const existing = await col.findOne({
         "card.name": card.name,
         "card.version": card.version
       });
-      if (!existing) throw e;
-      if (existing.fingerprint !== fp) {
-        const err: any = new Error("AgentCard for name@version already exists with different content (immutable)");
-        err.statusCode = 409;
-        err.code = "CARD_IMMUTABLE_CONFLICT";
-        throw err;
+      if (!existing) throw error;
+      if (existing.fingerprint !== fingerprint) {
+        const conflict: any = new Error(
+          "AgentCard for name@version already exists with different content (immutable)"
+        );
+        conflict.statusCode = 409;
+        conflict.code = "CARD_IMMUTABLE_CONFLICT";
+        throw conflict;
       }
-      return existing; // идемпотентно
+      return existing;
     }
-    throw e;
+    throw error;
   }
+}
+
+export async function findByName(db: Db, name: string, params: ListParams = {}) {
+  const col = collection(db);
+  const limit = normalizeLimit(params.limit);
+  const offset = normalizeOffset(params.offset);
+  return col
+    .find({ "card.name": name })
+    .sort({ "card.version": -1 })
+    .skip(offset)
+    .limit(limit)
+    .toArray();
 }
 
 export async function findByNameVersion(db: Db, name: string, version: string) {
   return collection(db).findOne({ "card.name": name, "card.version": version });
+}
+
+export async function list(db: Db, params: ListParams = {}) {
+  const col = collection(db);
+  const limit = normalizeLimit(params.limit);
+  const offset = normalizeOffset(params.offset);
+  const filter: Filter<StoredAgent> = {};
+  if (params.owner) {
+    filter.owner = params.owner;
+  }
+  if (params.status) {
+    filter.status = params.status;
+  }
+
+  return col
+    .find(filter)
+    .sort({ "card.name": 1, "card.version": -1 })
+    .skip(offset)
+    .limit(limit)
+    .toArray();
+}
+
+export async function searchBySkill(db: Db, skillId: string, params: ListParams = {}) {
+  const col = collection(db);
+  const limit = normalizeLimit(params.limit);
+  const offset = normalizeOffset(params.offset);
+
+  const filter: Filter<StoredAgent & Document> = {
+    "card.skills.id": skillId
+  };
+  if (params.status) {
+    filter.status = params.status;
+  }
+  if (params.owner) {
+    filter.owner = params.owner;
+  }
+
+  return col
+    .find(filter)
+    .sort({ "card.name": 1 })
+    .skip(offset)
+    .limit(limit)
+    .toArray();
 }
